@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscar Prestador por CUPO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url('https://img.freepik.com/vector-premium/pin-mapa-ubicacion-escuela-ilustracion-vectorial_652240-1350.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+    }
+
+    .contenedor {
+      background-color: rgba(255, 255, 255, 0.96);
+      border-top: 8px solid #800000;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h2 {
+      font-size: 20px;
+      text-align: center;
+      color: #4B1E1E;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 700;
+      color: #333;
+      font-size: 14px;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      text-transform: uppercase; /* Mostrar en mayúsculas */
+    }
+
+    button {
+      width: 100%;
+      background-color: #800000;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #5a0000;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #800000;
+      color: white;
+    }
+
+    td a {
+      color: #0056b3;
+      text-decoration: none;
+    }
+
+    td a:hover {
+      text-decoration: underline;
+    }
+
+    #resultado p {
+      font-weight: bold;
+      color: #333;
+      margin-top: 20px;
+    }
+
+    .fila-verde {
+      background-color: #d4edda !important;
+      color: #155724;
+    }
+
+    .fila-roja {
+      background-color: #f8d7da !important;
+      color: #721c24;
+    }
+
+    @media (max-width: 400px) {
+      h2 {
+        font-size: 18px;
+      }
+
+      button {
+        font-size: 15px;
+      }
+
+      th, td {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <h2>BUSCAR POR CCT</h2>
+
+    <label for="cupoInput">CCT:</label>
+    <input type="text" id="cupoInput" placeholder="Ingresa la CCT" aria-label="Campo para ingresar CCT">
+    <button id="buscarBtn" onclick="buscar()">Buscar</button>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    function buscar() {
+      const cupoInput = document.getElementById("cupoInput");
+      const cupo = cupoInput.value.trim().toUpperCase(); // Fuerza a mayúsculas
+      cupoInput.value = cupo; // Actualiza visualmente también
+      const resultado = document.getElementById("resultado");
+
+      if (!cupo) {
+        alert("Por favor, ingresa un CCT.");
+        return;
+      }
+
+      resultado.innerHTML = "<p>Buscando información...</p>";
+
+      const url = `https://script.google.com/macros/s/AKfycbx5bcmMM2KqstiaqbepBq_XE5nbrP8U1TILMaXR48TzYoiXrSSl4bhrymToPpWPbDmNmA/exec?cupo=${cupo}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            resultado.innerHTML = `<p style="color:red;">${data.error}</p>`;
+          } else {
+            const claseFila = data.nivel && data.nivel.toUpperCase() === "ATENDIDA" ? "fila-verde" : "fila-roja";
+            resultado.innerHTML = `
+              <table>
+                <thead>
+                  <tr>
+                    <th>CCT</th>
+                    <th>Nombre Escuela</th>
+                    <th>Municipio</th>
+                    <th>Estatus</th>
+                    <th>Ubicacion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="${claseFila}">
+                    <td>${data.cupo}</td>
+                    <td>${data.nombre}</td>
+                    <td>${data.puesto}</td>
+                    <td>${data.nivel}</td>
+                    <td><a href="${data.total}" target="_blank" rel="noopener noreferrer">Ver en Maps</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            `;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          resultado.innerHTML = "<p style='color:red;'>Error al conectar con el servidor.</p>";
+        });
+    }
+
+    document.getElementById("cupoInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        document.getElementById("buscarBtn").click();
+      }
+    });
+
+    // Forzar mayúsculas mientras el usuario escribe (valor real, no solo visual)
+    document.getElementById("cupoInput").addEventListener("input", function(e) {
+      e.target.value = e.target.value.toUpperCase();
+    });
+  </script>
+
+</body>
+</html>
